@@ -1,0 +1,17 @@
+{
+  "name": "golang-aws-scrapper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+    "dependencies": {
+      "serverless-go-plugin": "2.2.0",
+      "serverless":"3.19.0"
+    },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
+
