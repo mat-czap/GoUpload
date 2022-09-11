@@ -4,17 +4,23 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/matczap/repository/src/internal/folders"
 
 	"context"
 )
 
 type FolderRepository struct {
-	db    *dynamodb.Client
+	db    dynamoDBAPI
 	table string
 }
 
-func NewFolderRepository(db *dynamodb.Client, table string) *FolderRepository {
+type dynamoDBAPI interface {
+	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(options *dynamodb.Options)) (*dynamodb.PutItemOutput, error)
+	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
+}
+
+func NewFolderRepository(db dynamoDBAPI, table string) *FolderRepository {
 	return &FolderRepository{db: db, table: table}
 }
 
@@ -46,4 +52,26 @@ func (r FolderRepository) SaveFolder(ctx context.Context, folder folders.Folder)
 	}
 
 	return nil
+}
+
+func (r FolderRepository) GetFolder(ctx context.Context, id string, userId string) (folders.Folder, error) {
+	item, err := r.db.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String("folders"),
+		Key: map[string]types.AttributeValue{
+			"pk": &types.AttributeValueMemberS{Value: id},
+			"sk": &types.AttributeValueMemberS{Value: userId},
+		},
+	})
+	if err != nil {
+		return folders.Folder{}, err
+	}
+
+	var folderItem folderItem
+
+	err = attributevalue.UnmarshalMap(item.Item, &folderItem)
+	if err != nil {
+		return folders.Folder{}, err
+	}
+
+	return folderItem.Payload, nil
 }

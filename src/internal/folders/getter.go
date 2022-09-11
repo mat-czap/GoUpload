@@ -2,10 +2,18 @@ package folders
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"time"
 )
 
-type FileGetter struct{}
+type FolderGetter struct {
+	repository folderRepository
+}
+
+type folderRepository interface {
+	GetFolder(ctx context.Context, id, userID string) (Folder, error)
+}
 
 type Folder struct {
 	Id        string
@@ -15,6 +23,14 @@ type Folder struct {
 	Size      int
 }
 
-func (g FileGetter) GetFolder(ctx context.Context) {
+func NewFolderGetter(r folderRepository) *FolderGetter {
+	return &FolderGetter{repository: r}
+}
 
+func (g FolderGetter) GetFolder(ctx context.Context, id, userId string) (Folder, error) {
+	if strings.HasPrefix(userId, "baned") {
+		return Folder{}, errors.New("baned user")
+	}
+
+	return g.repository.GetFolder(ctx, id, userId)
 }

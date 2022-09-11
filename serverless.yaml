@@ -1,4 +1,4 @@
-service: example-service
+service: egnyte
 
 frameworkVersion: ">=3.19.0 <4.0.0"
 
@@ -9,7 +9,39 @@ provider:
 
 plugins:
   - serverless-go-plugin
+  - serverless-iam-roles-per-function
 
 functions:
   example:
     handler: ./src/functions/ # or just "./functions/example"
+    environment:
+      FILE_TABLE:
+        Ref: fileTable
+    iamRoleStatementsName: my-custom-role-name
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - dynamodb:*
+        Resource:
+          - !GetAtt fileTable.Arn
+          - !Join ["", [!GetAtt fileTable.Arn, "/*"]]
+
+resources: # CloudFormation template syntax from here on.
+  Resources:
+    fileTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: fileTable
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+          - AttributeName: sk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+          - AttributeName: sk
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

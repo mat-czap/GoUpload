@@ -1,8 +1,8 @@
 {
   "service": {
-    "service": "example-service",
+    "service": "egnyte",
     "serviceObject": {
-      "name": "example-service"
+      "name": "egnyte"
     },
     "provider": {
       "name": "aws",
@@ -86,7 +86,7 @@
           "ExampleLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/example-service-dev-example"
+              "LogGroupName": "/aws/lambda/egnyte-dev-example"
             }
           },
           "IamRoleLambdaExecution": {
@@ -114,7 +114,7 @@
                     "Fn::Join": [
                       "-",
                       [
-                        "example-service",
+                        "egnyte",
                         "dev",
                         "lambda"
                       ]
@@ -131,7 +131,7 @@
                         ],
                         "Resource": [
                           {
-                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/example-service-dev*:*"
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/egnyte-dev*:*"
                           }
                         ]
                       },
@@ -142,7 +142,7 @@
                         ],
                         "Resource": [
                           {
-                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/example-service-dev*:*:*"
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/egnyte-dev*:*:*"
                           }
                         ]
                       }
@@ -155,7 +155,7 @@
                 "Fn::Join": [
                   "-",
                   [
-                    "example-service",
+                    "egnyte",
                     "dev",
                     {
                       "Ref": "AWS::Region"
@@ -173,32 +173,154 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/example-service/dev/1657798109579-2022-07-14T11:28:29.579Z/example.zip"
+                "S3Key": "serverless/egnyte/dev/1662920296585-2022-09-11T18:18:16.585Z/example.zip"
               },
               "Handler": ".bin/example",
               "Runtime": "go1.x",
-              "FunctionName": "example-service-dev-example",
+              "FunctionName": "egnyte-dev-example",
               "MemorySize": 1024,
               "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "FILE_TABLE": {
+                    "Ref": "fileTable"
+                  }
+                }
+              },
               "Role": {
                 "Fn::GetAtt": [
-                  "IamRoleLambdaExecution",
+                  "ExampleIamRoleLambdaExecution",
                   "Arn"
                 ]
               }
             },
             "DependsOn": [
+              "ExampleIamRoleLambdaExecution",
               "ExampleLogGroup"
             ]
           },
-          "ExampleLambdaVersionfj0jS11p8dAKu4nP9ZM1pjC2dthXnSf4ROvSu6Yvg0Q": {
+          "ExampleLambdaVersionLVgYKa1q4ikfoJtWlX0pUcGJ0tDzmMzlLXcvkTZJCSs": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "ExampleLambdaFunction"
               },
-              "CodeSha256": "Kgmyk1Yjt9ed1BY0oKBAxWwB4H+PQRjT3jE9EDn+lQk="
+              "CodeSha256": "ra8BsSTDPtAb5OqjMexAhybZlsU5SqwS9F2ioIbnPsI="
+            }
+          },
+          "ExampleIamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "egnyte",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/egnyte-dev-example:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "dynamodb:*"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::GetAtt": [
+                              "fileTable",
+                              "Arn"
+                            ]
+                          },
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                {
+                                  "Fn::GetAtt": [
+                                    "fileTable",
+                                    "Arn"
+                                  ]
+                                },
+                                "/*"
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": "my-custom-role-name",
+              "ManagedPolicyArns": []
+            }
+          },
+          "fileTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "fileTable",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "pk",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "sk",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "pk",
+                  "KeyType": "HASH"
+                },
+                {
+                  "AttributeName": "sk",
+                  "KeyType": "RANGE"
+                }
+              ],
+              "ProvisionedThroughput": {
+                "ReadCapacityUnits": 1,
+                "WriteCapacityUnits": 1
+              }
             }
           }
         },
@@ -208,16 +330,16 @@
               "Ref": "ServerlessDeploymentBucket"
             },
             "Export": {
-              "Name": "sls-example-service-dev-ServerlessDeploymentBucketName"
+              "Name": "sls-egnyte-dev-ServerlessDeploymentBucketName"
             }
           },
           "ExampleLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ExampleLambdaVersionfj0jS11p8dAKu4nP9ZM1pjC2dthXnSf4ROvSu6Yvg0Q"
+              "Ref": "ExampleLambdaVersionLVgYKa1q4ikfoJtWlX0pUcGJ0tDzmMzlLXcvkTZJCSs"
             },
             "Export": {
-              "Name": "sls-example-service-dev-ExampleLambdaFunctionQualifiedArn"
+              "Name": "sls-egnyte-dev-ExampleLambdaFunctionQualifiedArn"
             }
           }
         }
@@ -307,14 +429,26 @@
       "vpc": {}
     },
     "plugins": [
-      "serverless-go-plugin"
+      "serverless-go-plugin",
+      "serverless-iam-roles-per-function"
     ],
     "pluginsData": {},
     "functions": {
       "example": {
         "handler": ".bin/example",
+        "environment": {
+          "FILE_TABLE": {
+            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ExampleLambdaFunction\"][\"Properties\"][\"Environment\"][\"Variables\"][\"FILE_TABLE\"]"
+          }
+        },
+        "iamRoleStatementsName": "my-custom-role-name",
+        "iamRoleStatements": [
+          {
+            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"ExampleIamRoleLambdaExecution\"][\"Properties\"][\"Policies\"][0][\"PolicyDocument\"][\"Statement\"][1]"
+          }
+        ],
         "events": [],
-        "name": "example-service-dev-example",
+        "name": "egnyte-dev-example",
         "package": {
           "individually": true,
           "exclude": [
@@ -329,13 +463,48 @@
         "timeout": 6,
         "runtime": "go1.x",
         "vpc": {},
-        "versionLogicalId": "ExampleLambdaVersionfj0jS11p8dAKu4nP9ZM1pjC2dthXnSf4ROvSu6Yvg0Q"
+        "versionLogicalId": "ExampleLambdaVersionLVgYKa1q4ikfoJtWlX0pUcGJ0tDzmMzlLXcvkTZJCSs"
       }
+    },
+    "resources": {
+      "Resources": {
+        "fileTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "Properties": {
+            "TableName": "fileTable",
+            "AttributeDefinitions": [
+              {
+                "AttributeName": "pk",
+                "AttributeType": "S"
+              },
+              {
+                "AttributeName": "sk",
+                "AttributeType": "S"
+              }
+            ],
+            "KeySchema": [
+              {
+                "AttributeName": "pk",
+                "KeyType": "HASH"
+              },
+              {
+                "AttributeName": "sk",
+                "KeyType": "RANGE"
+              }
+            ],
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 1,
+              "WriteCapacityUnits": 1
+            }
+          }
+        }
+      },
+      "Outputs": {}
     },
     "configValidationMode": "warn",
     "serviceFilename": "serverless.yaml",
     "initialServerlessConfig": {
-      "service": "example-service",
+      "service": "egnyte",
       "frameworkVersion": ">=3.19.0 <4.0.0",
       "provider": {
         "$ref": "$[\"service\"][\"provider\"]"
@@ -345,13 +514,16 @@
       },
       "functions": {
         "$ref": "$[\"service\"][\"functions\"]"
+      },
+      "resources": {
+        "$ref": "$[\"service\"][\"resources\"]"
       }
     },
     "layers": {},
     "isDashboardMonitoringPreconfigured": false
   },
   "package": {
-    "artifactDirectoryName": "serverless/example-service/dev/1657798109579-2022-07-14T11:28:29.579Z",
+    "artifactDirectoryName": "serverless/egnyte/dev/1662920296585-2022-09-11T18:18:16.585Z",
     "artifact": ""
   }
 }

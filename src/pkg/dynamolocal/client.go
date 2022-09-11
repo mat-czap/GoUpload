@@ -2,6 +2,7 @@ package dynamolocal
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
@@ -16,10 +17,11 @@ func CreateLocalClient() *dynamodb.Client {
 				SessionToken:    "local",
 			}, nil
 		}),
-		EndpointResolver: aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) { // nolint
-			dynamodbURL := "http://localhost:8000"
-
-			return aws.Endpoint{URL: dynamodbURL}, nil
+		EndpointResolverWithOptions: aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+			return aws.Endpoint{
+				SigningRegion: "local",
+				URL:           "http://localhost:8000",
+			}, nil
 		}),
 	})
 }
